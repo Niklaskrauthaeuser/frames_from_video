@@ -1,0 +1,33 @@
+#!/bin/bash
+
+# Fragt nach dem Quellpfad der Videodatei
+echo "Bitte geben Sie den Quellpfad der Videodatei an:"
+read source_path
+
+# Ausgabe der Quell-Framerate
+framerate_fraction=$(ffprobe -v error -select_streams v -of default=noprint_wrappers=1:nokey=1 -show_entries stream=r_frame_rate "$source_path")
+numerator=$(echo "$framerate_fraction" | cut -d '/' -f 1)
+denominator=$(echo "$framerate_fraction" | cut -d '/' -f 2)
+framerate=$(echo "scale=2; $numerator / $denominator" | bc)
+echo "Die Quell-Framerate beträgt: $framerate fps"
+
+# Abfrage, wie viele Einzelbilder pro Sekunde erstellt werden sollen
+echo "Wie viele Einzelbilder pro Sekunde sollen erstellt werden?"
+echo "Geben Sie die gewünschte Framerate im folgenden Format an: X/Y (z.B. 1/2 für ein Einzelbild alle 2 Sekunden):"
+read fps
+
+# Abfrage nach dem Dateiformat für die Einzelbilder
+echo "Bitte geben Sie das gewünschte Dateiformat für die Einzelbilder an (z.B. jpg, png):"
+read image_format
+
+# Abfrage nach dem Zielpfad
+echo "Bitte geben Sie den Zielpfad für die erstellten Einzelbilder an:"
+read target_path
+
+# Erstellt Einzelbilder mit ffmpeg
+mkdir -p "$target_path"
+ffmpeg -i "$source_path" -vf "fps=$fps" "$target_path/frame%04d.$image_format"
+
+echo "Die Einzelbilder wurden im gewünschten Format und Framerate im Zielpfad erstellt."
+echo "Drücken Sie eine beliebige Taste, um fortzufahren..."
+read -n 1 -s
